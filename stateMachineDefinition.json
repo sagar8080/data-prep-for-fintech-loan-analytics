@@ -1,0 +1,91 @@
+{
+    "Comment": "Step Function to orchestrate 4 AWS Glue Jobs",
+    "StartAt": "LoadMetadata",
+    "States": {
+      "LoadMetadata": {
+        "Type": "Task",
+        "Resource": "arn:aws:states:::glue:startJobRun.sync",
+        "Parameters": {
+          "JobName": "LoadMetadata"
+        },
+        "Next": "DataProfilingJob",
+        "Catch": [
+          {
+            "ErrorEquals": [
+              "States.ALL"
+            ],
+            "Next": "FailState"
+          }
+        ]
+      },
+      "DataProfilingJob": {
+        "Type": "Task",
+        "Resource": "arn:aws:states:::glue:startJobRun.sync",
+        "Parameters": {
+          "JobName": "DataProfilingJob"
+        },
+        "Next": "DataQualityChecksJob",
+        "Catch": [
+          {
+            "ErrorEquals": [
+              "States.ALL"
+            ],
+            "Next": "FailState"
+          }
+        ]
+      },
+      "DataQualityChecksJob": {
+        "Type": "Task",
+        "Resource": "arn:aws:states:::glue:startJobRun.sync",
+        "Parameters": {
+          "JobName": "DataQualityChecksJob"
+        },
+        "Next": "DataCleaningJob",
+        "Catch": [
+          {
+            "ErrorEquals": [
+              "States.ALL"
+            ],
+            "Next": "FailState"
+          }
+        ]
+      },
+      "DataCleaningJob": {
+        "Type": "Task",
+        "Resource": "arn:aws:states:::glue:startJobRun.sync",
+        "Parameters": {
+          "JobName": "DataCleaningJob"
+        },
+        "Next": "DataTransformationJob",
+        "Catch": [
+          {
+            "ErrorEquals": [
+              "States.ALL"
+            ],
+            "Next": "FailState"
+          }
+        ]
+      },
+      "DataTransformationJob": {
+        "Type": "Task",
+        "Resource": "arn:aws:states:::glue:startJobRun.sync",
+        "Parameters": {
+          "JobName": "DataTransformationJob"
+        },
+        "End": true,
+        "Catch": [
+          {
+            "ErrorEquals": [
+              "States.ALL"
+            ],
+            "Next": "FailState"
+          }
+        ]
+      },
+      "FailState": {
+        "Type": "Fail",
+        "Error": "JobFailed",
+        "Cause": "A Glue Job failed during execution."
+      }
+    }
+  }
